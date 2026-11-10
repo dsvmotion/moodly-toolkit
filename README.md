@@ -28,7 +28,7 @@ En el `.claude/settings.json` del repositorio que lo quiera:
 {
   "extraKnownMarketplaces": {
     "moodly-toolkit": {
-      "source": { "source": "github", "repo": "dsvmotion/moodly-toolkit", "ref": "v1.0.0" }
+      "source": { "source": "github", "repo": "dsvmotion/moodly-toolkit", "ref": "release/v1.0.0" }
     }
   },
   "enabledPlugins": {
@@ -37,8 +37,8 @@ En el `.claude/settings.json` del repositorio que lo quiera:
 }
 ```
 
-- **Fijado a una etiqueta.** `ref` es una etiqueta de este repositorio (ver «Versiones»). Sin `ref`, quien lo instala sigue `main` y recibe cualquier cambio que entre aquí. Un marketplace no se puede fijar a un commit: `ref` solo admite una rama o una etiqueta.
-- **En el terminal o en la app de escritorio:** una vez por clon, `claude plugin marketplace add dsvmotion/moodly-toolkit#v1.0.0` y después, por cada plugin, `claude plugin install <plugin>@moodly-toolkit --scope project`.
+- **Fijado a una versión.** `ref` es una rama de versión de este repositorio (ver «Versiones»). Sin `ref`, quien lo instala sigue `main` y recibe cualquier cambio que entre aquí. Un marketplace no se puede fijar a un commit: `ref` solo admite una rama o una etiqueta.
+- **En el terminal o en la app de escritorio:** una vez por clon, `claude plugin marketplace add dsvmotion/moodly-toolkit#release/v1.0.0` y después, por cada plugin, `claude plugin install <plugin>@moodly-toolkit --scope project`.
 - **En una sesión en la nube** (claude.ai/code): hoy no se instalan los plugins que un repositorio activa en su `.claude/settings.json` ([documentación](https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup)). Allí solo cargan los plugins de la cuenta de claude.ai y los de la configuración gestionada de la organización.
 - Este repositorio es público: no hacen falta credenciales para instalarlo, y por eso mismo aquí no entra nada interno del proyecto.
 
@@ -98,13 +98,15 @@ Cómo se consultan: `git clone --depth 1` a una carpeta temporal fuera del repos
 
 ## Versiones
 
-Cada estado revisado de `main` lleva una etiqueta. Quien usa el toolkit se fija a una, y pasar a la siguiente es un cambio en su propio repositorio, con su propia revisión.
+Cada estado revisado de `main` queda en una rama de versión, `release/vX.Y.Z`, que no recibe más commits. Quien usa el toolkit se fija a una, y pasar a la siguiente es un cambio en su propio repositorio, con su propia revisión.
 
-| Etiqueta | Qué trae |
+| Versión | Qué trae |
 | --- | --- |
-| `v1.0.0` | Los 9 plugins de la revisión del 2026-11-10. Su contenido es el del commit `f43124b59943642b00eab6403a83ba3f333d7666`; después solo cambió este README. |
+| `release/v1.0.0` | Los 9 plugins de la revisión del 2026-11-10. Su contenido es el del commit `f43124b59943642b00eab6403a83ba3f333d7666`; después solo cambió este README. |
 
-Una etiqueta la puede mover o borrar quien tenga permiso de escritura en este repositorio. Protegerlas (y proteger `main`) se hace en los ajustes del repositorio en GitHub.
+Son ramas y no etiquetas porque la sesión que montó el repositorio no puede empujar etiquetas. Una etiqueta sirve igual como `ref`.
+
+Una rama de versión la puede mover quien tenga permiso de escritura en este repositorio. Protegerlas (y proteger `main`) se hace en los ajustes del repositorio en GitHub: una regla para `release/*` que impida empujar y borrar.
 
 ## Cómo se actualiza un plugin
 
@@ -114,5 +116,5 @@ Una etiqueta la puede mover o borrar quien tenga permiso de escritura en este re
 4. Si el origen no cambia su `version` en `plugin.json`, cámbiala tú: quien ya tiene el plugin instalado no recibe la copia nueva mientras la versión sea la misma.
 5. `claude plugin validate .` y, por plugin, `claude --plugin-dir plugins/<nombre> plugin details <nombre>`: el inventario debe decir los hooks y servidores MCP que esperas.
 6. PR con la tabla de la revisión.
-7. Tras el merge, una etiqueta nueva sobre ese commit de `main` (ver «Versiones»). Las etiquetas no se mueven ni se reutilizan.
-8. En cada repositorio que use el toolkit, un PR que cambie `ref` a la etiqueta nueva. Hasta entonces sigue con la anterior.
+7. Tras el merge, una rama de versión nueva sobre ese commit de `main` (ver «Versiones»). Una rama de versión no recibe más commits ni se reutiliza.
+8. En cada repositorio que use el toolkit, un PR que cambie `ref` a la versión nueva. Hasta entonces sigue con la anterior.
