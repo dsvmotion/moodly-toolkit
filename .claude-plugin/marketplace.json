@@ -1,0 +1,63 @@
+{
+  "name": "moodly-toolkit",
+  "description": "Plugins de Claude Code del proyecto: método de trabajo, diseño de interfaz y revisión legal. Copias revisadas y fijadas a un commit de su origen.",
+  "owner": {
+    "name": "dsvmotion"
+  },
+  "plugins": [
+    {
+      "name": "superpowers",
+      "source": "./plugins/superpowers",
+      "description": "Método de trabajo: diseñar antes de construir, planes, TDD, depuración sistemática y revisión de código.",
+      "category": "workflow"
+    },
+    {
+      "name": "impeccable",
+      "source": "./plugins/impeccable",
+      "description": "Diseño de interfaz: dar forma, criticar, auditar y pulir pantallas. Sin su motor ni sus hooks.",
+      "category": "design"
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "source": "./plugins/ui-ux-pro-max",
+      "description": "Base de datos local de estilos, paletas, tipografías, gráficas y guías de UX, con búsqueda.",
+      "category": "design"
+    },
+    {
+      "name": "taste-skill",
+      "source": "./plugins/taste-skill",
+      "description": "Páginas web de empresa sin aspecto genérico, con un comprobador en navegador que se lanza a mano.",
+      "category": "design"
+    },
+    {
+      "name": "design-motion",
+      "source": "./plugins/design-motion",
+      "description": "Animación e interacción: cuándo animar, rendimiento, gestos y revisión de animaciones.",
+      "category": "design"
+    },
+    {
+      "name": "privacy-legal",
+      "source": "./plugins/privacy-legal",
+      "description": "Privacidad: evaluaciones de impacto, revisión de DPAs, respuesta a solicitudes de derechos y desvíos de la política.",
+      "category": "legal"
+    },
+    {
+      "name": "ai-governance-legal",
+      "source": "./plugins/ai-governance-legal",
+      "description": "Gobierno de la IA: inventario de sistemas, evaluaciones de impacto, términos de IA de proveedores y política de uso.",
+      "category": "legal"
+    },
+    {
+      "name": "product-legal",
+      "source": "./plugins/product-legal",
+      "description": "Legal de producto: revisión de lanzamientos, riesgo de funcionalidades y afirmaciones de marketing.",
+      "category": "legal"
+    },
+    {
+      "name": "commercial-legal",
+      "source": "./plugins/commercial-legal",
+      "description": "Legal comercial: revisión de contratos de proveedor, NDAs y SaaS, renovaciones y resúmenes para negocio.",
+      "category": "legal"
+    }
+  ]
+}
