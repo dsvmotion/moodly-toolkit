@@ -1,0 +1,12 @@
+{
+  "name": "design-motion",
+  "version": "0.1.0-715c1807e08c",
+  "description": "Emil Kowalski's design engineering skills: when and how to animate, animation performance, gestures, reviewing and removing animations, and picking UI libraries.",
+  "author": {
+    "name": "Emil Kowalski"
+  },
+  "homepage": "https://github.com/emilkowalski/skills",
+  "repository": "https://github.com/emilkowalski/skills",
+  "license": "MIT",
+  "keywords": ["skills", "animation", "motion", "design-engineering", "ui"]
+}
