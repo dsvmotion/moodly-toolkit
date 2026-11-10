@@ -5,6 +5,8 @@ Uso:  python3 scripts/export-claude-dir.py <destino>
 
 `<destino>` es la carpeta `.claude/` del repositorio que recibe las copias.
 Debe no existir o no tener todavía `skills/`, `agents/`, `hooks/` ni `toolkit/`.
+No escribe `settings.json`: el hook de arranque se registra a mano en el
+`.claude/settings.json` del repositorio (el bloque está en el README).
 
 Por qué hace falta: una sesión de Claude Code en la nube no carga los plugins
 de un repositorio (ni de un marketplace ni enteros dentro de `.claude/skills/`),
@@ -23,7 +25,9 @@ Qué cambia respecto a `plugins/` (todo lo demás se copia byte a byte):
   - legal: la plantilla del perfil (`CLAUDE.md` del plugin) pasa a
     `toolkit/<plugin>/practice-profile-template.md` y la ruta que la cita en
     `cold-start-interview` se reescribe.
-  - ui-ux-pro-max: la ruta de plugin del buscador pasa a `${CLAUDE_SKILL_DIR}`.
+  - ui-ux-pro-max: la ruta de plugin del buscador pasa a `${CLAUDE_SKILL_DIR}`,
+    y su carpeta de scripts lleva un `.gitignore` nuevo para el `__pycache__/`
+    que deja el buscador al ejecutarse.
   - taste-skill: solo `SKILL.md` y `references/`, con un aviso al principio de
     que faltan `scripts/` y `assets/`.
 
@@ -117,6 +121,7 @@ def main():
     # ui-ux-pro-max: una skill, con la ruta del buscador reescrita.
     uupm = copy_skill(PLUGINS / "ui-ux-pro-max" / ".claude" / "skills" / "ui-ux-pro-max", skills, "ui-ux-pro-max")
     rewrite(uupm / "SKILL.md", "${CLAUDE_PLUGIN_ROOT}/.claude/skills/ui-ux-pro-max/", "${CLAUDE_SKILL_DIR}/")
+    (uupm / "scripts" / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
     copy_meta("ui-ux-pro-max", toolkit)
 
     # taste-skill: solo SKILL.md y references/, con aviso.

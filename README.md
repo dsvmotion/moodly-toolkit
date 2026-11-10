@@ -22,6 +22,55 @@ Los plugins de legal ayudan a preparar y revisar; no sustituyen a un abogado.
 
 ## Cómo se usa
 
+Hay dos formas. Solo la primera sirve en las sesiones en la nube.
+
+### Copias en `.claude/` (sirve en todas partes)
+
+Una sesión de Claude Code en la nube **no carga los plugins de un repositorio**: ni los de un marketplace declarado en su `.claude/settings.json`, ni un plugin entero puesto en `.claude/skills/`. Sí carga las skills sueltas, los agentes y los hooks que viajan en `.claude/`. Probado con sesiones reales en los PRs #4, #5 y #6 de este repositorio.
+
+`scripts/export-claude-dir.py` escribe esa carpeta a partir de `plugins/`:
+
+```bash
+python3 scripts/export-claude-dir.py /ruta/al/repositorio/.claude
+```
+
+Deja 74 skills en `skills/`, los 4 agentes de `impeccable` en `agents/`, el hook de arranque de `superpowers` en `hooks/session-start` y, en `toolkit/`, las licencias, el origen de cada plugin y sus archivos de apoyo. Solo lee y copia archivos. Lo que cambia respecto a `plugins/` está en la cabecera del script:
+
+- las skills de legal llevan el nombre de su plugin delante (`privacy-legal-dpa-review`), porque los cuatro plugins repiten nombres;
+- la ruta del buscador de `ui-ux-pro-max` pasa a `${CLAUDE_SKILL_DIR}`;
+- de `taste-skill` van solo `SKILL.md` y `references/` (queda como `design-taste-frontend`), con un aviso de que faltan `scripts/` y `assets/`.
+
+El hook de arranque se registra a mano en el `.claude/settings.json` del repositorio:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CLAUDE_PLUGIN_ROOT=\"$CLAUDE_PROJECT_DIR/.claude\" bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Las copias van en un PR del repositorio que las recibe, con el commit de este repositorio del que salen. Así quedan fijadas por construcción.
+
+A tener en cuenta:
+
+- **Sin prefijo de plugin.** Las skills se llaman `brainstorming` o `animate`, no `superpowers:brainstorming`.
+- **Muchas skills, poco sitio.** Con las 74, la lista de skills de la sesión recorta: en la prueba, 20 llegaron solo con el nombre, sin descripción.
+- **Tres skills no se listan** (`pick-ui-library`, `prototype` y `review-animations`): su origen las marca para que solo las lance una persona.
+- **Legal guarda su perfil fuera del repositorio**, en `~/.claude/plugins/config/claude-for-legal/`. En una sesión en la nube esa carpeta se pierde al acabar.
+
+### Marketplace (solo terminal y app de escritorio)
+
 En el `.claude/settings.json` del repositorio que lo quiera:
 
 ```json
@@ -37,9 +86,8 @@ En el `.claude/settings.json` del repositorio que lo quiera:
 }
 ```
 
-- **Fijado a una versión.** `ref` es una rama de versión de este repositorio (ver «Versiones»). Sin `ref`, quien lo instala sigue `main` y recibe cualquier cambio que entre aquí. Un marketplace no se puede fijar a un commit: `ref` solo admite una rama o una etiqueta.
-- **En el terminal o en la app de escritorio:** una vez por clon, `claude plugin marketplace add dsvmotion/moodly-toolkit#release/v1.0.0` y después, por cada plugin, `claude plugin install <plugin>@moodly-toolkit --scope project`.
-- **En una sesión en la nube** (claude.ai/code): hoy no se instalan los plugins que un repositorio activa en su `.claude/settings.json` ([documentación](https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup)). Allí solo cargan los plugins de la cuenta de claude.ai y los de la configuración gestionada de la organización.
+- **Fijado a una versión.** `ref` es una rama de versión de este repositorio (ver «Versiones»). Sin `ref`, quien lo instala sigue `main` y recibe cualquier cambio que entre aquí. Un marketplace no se puede fijar a un commit: `ref` solo admite una rama o una etiqueta. Un plugin suelto sí: su fuente (`github`, `url` o `git-subdir`) admite `sha`.
+- Una vez por clon: `claude plugin marketplace add dsvmotion/moodly-toolkit#release/v1.0.0` y después, por cada plugin, `claude plugin install <plugin>@moodly-toolkit --scope project`.
 - Este repositorio es público: no hacen falta credenciales para instalarlo, y por eso mismo aquí no entra nada interno del proyecto.
 
 ## Revisión de seguridad (2026-11-10)
