@@ -98,7 +98,7 @@ Se revisó cada hook, script y `.mcp.json` de los seis repositorios de origen an
 - se quita lo que descarga y ejecuta binarios, y los servidores MCP de servicios que el proyecto no usa;
 - los scripts que quedan solo corren cuando Claude los lanza con Bash, bajo los permisos de la sesión.
 
-Tras la revisión, el marketplace entero tiene **un hook** (el `SessionStart` de `superpowers`) y **ningún servidor MCP**. Las skills traen unos 165 scripts (7 en `superpowers`, 5 en `ui-ux-pro-max` y 153 en `taste-skill`): ninguno corre solo, pero una skill puede pedir a Claude que los lance, y algunos abren un Chrome sin interfaz o llaman a la red.
+Tras la revisión, el marketplace entero tiene **un hook** (el `SessionStart` de `superpowers`) y **ningún servidor MCP**. Las skills traen unos 170 scripts (13 en `superpowers`, 5 en `ui-ux-pro-max` y 153 en `taste-skill`): ninguno corre solo, pero una skill puede pedir a Claude que los lance, y algunos abren un Chrome sin interfaz o llaman a la red.
 
 | Plugin | Pieza | Qué ejecuta | Red | Permisos | Decisión |
 | --- | --- | --- | --- | --- | --- |
