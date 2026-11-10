@@ -28,7 +28,7 @@ En el `.claude/settings.json` del repositorio que lo quiera:
 {
   "extraKnownMarketplaces": {
     "moodly-toolkit": {
-      "source": { "source": "github", "repo": "dsvmotion/moodly-toolkit" }
+      "source": { "source": "github", "repo": "dsvmotion/moodly-toolkit", "ref": "v1.0.0" }
     }
   },
   "enabledPlugins": {
@@ -37,7 +37,8 @@ En el `.claude/settings.json` del repositorio que lo quiera:
 }
 ```
 
-- **En el terminal o en la app de escritorio:** al confiar en la carpeta, Claude Code registra el marketplace. Cada persona instala después cada plugin una vez por clon: `claude plugin install <plugin>@moodly-toolkit --scope project`.
+- **Fijado a una etiqueta.** `ref` es una etiqueta de este repositorio (ver «Versiones»). Sin `ref`, quien lo instala sigue `main` y recibe cualquier cambio que entre aquí. Un marketplace no se puede fijar a un commit: `ref` solo admite una rama o una etiqueta.
+- **En el terminal o en la app de escritorio:** una vez por clon, `claude plugin marketplace add dsvmotion/moodly-toolkit#v1.0.0` y después, por cada plugin, `claude plugin install <plugin>@moodly-toolkit --scope project`.
 - **En una sesión en la nube** (claude.ai/code): hoy no se instalan los plugins que un repositorio activa en su `.claude/settings.json` ([documentación](https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup)). Allí solo cargan los plugins de la cuenta de claude.ai y los de la configuración gestionada de la organización.
 - Este repositorio es público: no hacen falta credenciales para instalarlo, y por eso mismo aquí no entra nada interno del proyecto.
 
@@ -49,7 +50,7 @@ Se revisó cada hook, script y `.mcp.json` de los seis repositorios de origen an
 - se quita lo que descarga y ejecuta binarios, y los servidores MCP de servicios que el proyecto no usa;
 - los scripts que quedan solo corren cuando Claude los lanza con Bash, bajo los permisos de la sesión.
 
-Tras la revisión, el marketplace entero tiene **un hook** (el `SessionStart` de `superpowers`) y **ningún servidor MCP**.
+Tras la revisión, el marketplace entero tiene **un hook** (el `SessionStart` de `superpowers`) y **ningún servidor MCP**. Las skills traen unos 165 scripts (7 en `superpowers`, 5 en `ui-ux-pro-max` y 153 en `taste-skill`): ninguno corre solo, pero una skill puede pedir a Claude que los lance, y algunos abren un Chrome sin interfaz o llaman a la red.
 
 | Plugin | Pieza | Qué ejecuta | Red | Permisos | Decisión |
 | --- | --- | --- | --- | --- | --- |
@@ -63,7 +64,7 @@ Tras la revisión, el marketplace entero tiene **un hook** (el `SessionStart` de
 | ui-ux-pro-max | Skills `banner-design`, `brand`, `design`, `design-system`, `slides` y `ui-styling` | Scripts de Python y Node | APIs de imagen de terceros (Gemini, Atlas Cloud y MuAPI), Pexels y `npx shadcn` | Leen claves de `~/.claude/.env` | **No se copian** |
 | ui-ux-pro-max | `scripts/search.py`, `core.py`, `design_system.py`, `reasoning_contract.py` y `validate_data.py` | Python con la biblioteca estándar: busca en los CSV del plugin | Ninguna | Con `--persist`, escribe `design-system/MASTER.md` en el proyecto | **Se quedan** (sin `scripts/tests/`) |
 | taste-skill | Hook `Stop` en el frontmatter de `SKILL.md` | `node scripts/gate.mjs --hook claude` en cada parada (hasta 600 s); puede bloquearla. Busca `gate.mjs` también en el proyecto y en `~/.claude` | Las de `gate.mjs` | Los del usuario | **Quitado** |
-| taste-skill | `skills/taste-skill/scripts/*.mjs` (10 scripts, unas 17.000 líneas) y los `.mjs` de `assets/` | Node: lanzan un Chrome sin interfaz y un servidor de archivos local, y `ffmpeg` si existe | Servidor en `127.0.0.1`; `icons.mjs` descarga de `cdn.jsdelivr.net`; `photos.mjs` busca y descarga en Wikimedia Commons; el comprobador pide las URLs de la página que revisa | Escriben en `.taste-skill/` del proyecto y en el directorio temporal | **Se quedan**. Revisados por superficie (red, procesos y borrados), no línea a línea |
+| taste-skill | `skills/taste-skill/scripts/*.mjs` (10 scripts, unas 17.000 líneas) y los 10 `.mjs` de `assets/` | Node: lanzan un Chrome sin interfaz y un servidor de archivos local, y `ffmpeg` si existe | Servidor en `127.0.0.1`; `icons.mjs` descarga de `cdn.jsdelivr.net`; `photos.mjs` busca y descarga en Wikimedia Commons; `assets/components/fx-map/bake.mjs` consulta la API Overpass de OpenStreetMap (`overpass-api.de` y `overpass.kumi.systems`); el comprobador pide las URLs de la página que revisa | Escriben en `.taste-skill/` del proyecto y en el directorio temporal | **Se quedan**. Revisados por superficie (red, procesos y borrados), no línea a línea |
 | taste-skill | `install.sh` | Enlaza las skills en `~/.claude` | Ninguna | Escribe en el directorio personal | **No se copia** |
 | design-motion | — | Nada: solo Markdown | Ninguna | Ninguno | Sin hooks, scripts ni MCP |
 | privacy-legal | `.mcp.json` | Servidores MCP remotos | `mcp.slack.com` y `drivemcp.googleapis.com` | OAuth de Slack y de Google Drive | **Quitado** |
@@ -95,6 +96,16 @@ Cómo se consultan: `git clone --depth 1` a una carpeta temporal fuera del repos
 | [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits) | `9d9c687dc4f55b23539aa5417b703078047efa74` | Para copiar componentes concretos a `packages/ui` cuando se necesiten, adaptados a nuestros tokens. Licencia MIT + Commons Clause: usarlos en el producto, sí; redistribuir o vender la librería, no. En cada PR que lo use se anota de qué componente sale. |
 | [ComposioHQ/awesome-claude-skills](https://github.com/ComposioHQ/awesome-claude-skills) | `be2a406907dbc61b73e6827ded415c96139d13a2` | Catálogo para buscar ideas. El repositorio no tiene licencia en la raíz: se comprueba la de cada skill antes de copiarla. No se instala nada de él. |
 
+## Versiones
+
+Cada estado revisado de `main` lleva una etiqueta. Quien usa el toolkit se fija a una, y pasar a la siguiente es un cambio en su propio repositorio, con su propia revisión.
+
+| Etiqueta | Qué trae |
+| --- | --- |
+| `v1.0.0` | Los 9 plugins de la revisión del 2026-11-10. Su contenido es el del commit `f43124b59943642b00eab6403a83ba3f333d7666`; después solo cambió este README. |
+
+Una etiqueta la puede mover o borrar quien tenga permiso de escritura en este repositorio. Protegerlas (y proteger `main`) se hace en los ajustes del repositorio en GitHub.
+
 ## Cómo se actualiza un plugin
 
 1. Clona el origen con `git clone --depth 1` en una carpeta temporal fuera de este repositorio. No ejecutes sus scripts ni instaladores.
@@ -103,3 +114,5 @@ Cómo se consultan: `git clone --depth 1` a una carpeta temporal fuera del repos
 4. Si el origen no cambia su `version` en `plugin.json`, cámbiala tú: quien ya tiene el plugin instalado no recibe la copia nueva mientras la versión sea la misma.
 5. `claude plugin validate .` y, por plugin, `claude --plugin-dir plugins/<nombre> plugin details <nombre>`: el inventario debe decir los hooks y servidores MCP que esperas.
 6. PR con la tabla de la revisión.
+7. Tras el merge, una etiqueta nueva sobre ese commit de `main` (ver «Versiones»). Las etiquetas no se mueven ni se reutilizan.
+8. En cada repositorio que use el toolkit, un PR que cambie `ref` a la etiqueta nueva. Hasta entonces sigue con la anterior.
