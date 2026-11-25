@@ -39,8 +39,11 @@ Deja 74 skills en `skills/`, los 4 agentes de `impeccable` en `agents/`, el hook
 - las skills de legal llevan el nombre de su plugin delante (`privacy-legal-dpa-review`), porque los cuatro plugins repiten nombres;
 - la ruta del buscador de `ui-ux-pro-max` pasa a `${CLAUDE_SKILL_DIR}`;
 - de `taste-skill` van solo `SKILL.md` y `references/` (queda como `design-taste-frontend`), con un aviso de que faltan `scripts/` y `assets/`.
+- solo las skills de `scripts/visible-skills.txt` (20) quedan en el listado de cada sesión. A las demás se les añade `disable-model-invocation: true`: siguen en la carpeta y no gastan contexto. `toolkit/SKILLS-INDEX.md` lleva una línea por skill, visibles y ocultas, para que quien planifica una tarea sepa cuál encaja; una oculta se usa leyendo su `SKILL.md`.
 
-El hook de arranque se registra a mano en el `.claude/settings.json` del repositorio:
+Con `--sin-hook` no escribe `hooks/session-start` (ni exige que `hooks/` no exista). El hook obliga a buscar una skill antes de cada respuesta; sin él, las skills se cargan solo cuando la tarea encaja.
+
+Si se exporta con el hook, se registra a mano en el `.claude/settings.json` del repositorio:
 
 ```json
 {

@@ -1,0 +1,25 @@
+# Skills que aparecen en el listado de cada sesión (una por línea).
+# Las demás se exportan ocultas y se encuentran por toolkit/SKILLS-INDEX.md.
+# Método de trabajo
+brainstorming
+writing-plans
+executing-plans
+systematic-debugging
+test-driven-development
+verification-before-completion
+requesting-code-review
+receiving-code-review
+# Diseño y frontend web
+impeccable
+ui-ux-pro-max
+design-taste-frontend
+emil-design-eng
+break-ui
+mobile-native
+animate
+animation-performance
+# Legal: las de entrada (llevan a las demás)
+privacy-legal-use-case-triage
+ai-governance-legal-use-case-triage
+product-legal-is-this-a-problem
+product-legal-launch-review

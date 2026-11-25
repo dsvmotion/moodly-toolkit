@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exporta los plugins de este repositorio a una carpeta `.claude/` aplanada.
 
-Uso:  python3 scripts/export-claude-dir.py <destino>
+Uso:  python3 scripts/export-claude-dir.py <destino> [--sin-hook]
 
 `<destino>` es la carpeta `.claude/` del repositorio que recibe las copias.
 Debe no existir o no tener todavía `skills/`, `agents/`, `hooks/` ni `toolkit/`.
@@ -16,7 +16,9 @@ Qué escribe en `<destino>`:
   skills/<nombre>/      una carpeta por skill, con su SKILL.md
   agents/<nombre>.md    los agentes de impeccable
   hooks/session-start   el hook de arranque de superpowers, sin cambios
+                        (con `--sin-hook` no se escribe)
   toolkit/              licencias, origen de cada plugin y archivos de apoyo
+  toolkit/SKILLS-INDEX.md  una línea por skill: las visibles y las ocultas
 
 Qué cambia respecto a `plugins/` (todo lo demás se copia byte a byte):
   - legal: las skills llevan el nombre de su plugin delante, porque los cuatro
@@ -31,6 +33,12 @@ Qué cambia respecto a `plugins/` (todo lo demás se copia byte a byte):
   - taste-skill: solo `SKILL.md` y `references/`, con un aviso al principio de
     que faltan `scripts/` y `assets/`.
 
+  - visibilidad: las skills de `scripts/visible-skills.txt` quedan como están
+    (su descripción entra en el listado de cada sesión). A todas las demás se
+    les añade `disable-model-invocation: true` al frontmatter: siguen en la
+    carpeta, no gastan contexto y se usan leyendo su `SKILL.md` cuando el
+    índice (`toolkit/SKILLS-INDEX.md`) dice que encajan con la tarea.
+
 No ejecuta nada de los plugins: solo lee y copia archivos.
 """
 import re
@@ -41,6 +49,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PLUGINS = ROOT / "plugins"
 LEGAL = ["privacy-legal", "ai-governance-legal", "product-legal", "commercial-legal"]
+VISIBLE_FILE = ROOT / "scripts" / "visible-skills.txt"
+HIDE = "disable-model-invocation: true"
+
+INDEX_HEAD = """# Índice de skills
+
+Generado por `scripts/export-claude-dir.py` de moodly-toolkit. No se edita a mano.
+
+- **Visibles:** aparecen en el listado de skills de cada sesión y se cargan con
+  la herramienta Skill cuando la tarea encaja.
+- **Ocultas:** no aparecen en el listado y no gastan contexto. Cuando una
+  encaja con la tarea, se lee su archivo `.claude/skills/<nombre>/SKILL.md` y se
+  sigue. Si su texto cita `${CLAUDE_SKILL_DIR}`, es esa misma carpeta.
+
+Quien planifica una tarea (o responde a una petición) mira este índice y dice
+qué skill encaja; la persona no tiene que conocer los nombres.
+"""
 
 TASTE_NOTICE = """
 > **Copia reducida (moodly-toolkit).** Esta copia trae solo este `SKILL.md` y
@@ -79,6 +103,45 @@ def rewrite(path, old, new, count=None):
     path.write_text(text.replace(old, new), encoding="utf-8")
 
 
+def read_visible():
+    names = [l.strip() for l in VISIBLE_FILE.read_text(encoding="utf-8").splitlines()]
+    return [n for n in names if n and not n.startswith("#")]
+
+
+def summary(front):
+    """La descripción del frontmatter, en una línea y recortada."""
+    m = re.search(r"^description:[ \t]*(.*?)(?=^[A-Za-z][\w-]*:|\Z)", front, re.M | re.S)
+    text = " ".join(m.group(1).split()) if m else ""
+    text = text.strip("'\"")
+    text = re.sub(r"^[>|][+-]?\s*", "", text)
+    if len(text) > 160:
+        text = text[:157].rsplit(" ", 1)[0] + "…"
+    return text
+
+
+def apply_visibility(skills, toolkit):
+    """Oculta las skills que no están en la lista y escribe el índice."""
+    visible = read_visible()
+    present = sorted(p.name for p in skills.iterdir() if (p / "SKILL.md").is_file())
+    missing = [n for n in visible if n not in present]
+    if missing:
+        die(f"{VISIBLE_FILE.name} nombra skills que no existen: {', '.join(missing)}")
+    rows = {True: [], False: []}
+    for name in present:
+        path = skills / name / "SKILL.md"
+        front, body = split_frontmatter(path.read_text(encoding="utf-8"), path)
+        shown = name in visible
+        if shown and HIDE in front:
+            die(f"{name} está en {VISIBLE_FILE.name} pero su origen la trae oculta")
+        if not shown and HIDE not in front:
+            path.write_text(f"---\n{front}\n{HIDE}\n---\n{body}", encoding="utf-8")
+        rows[shown].append(f"- `{name}`: {summary(front)}")
+    out = [INDEX_HEAD, f"\n## Visibles ({len(rows[True])})\n", *rows[True],
+           f"\n## Ocultas ({len(rows[False])})\n", *rows[False], ""]
+    (toolkit / "SKILLS-INDEX.md").write_text("\n".join(out), encoding="utf-8")
+    return len(rows[True]), len(rows[False])
+
+
 def copy_meta(plugin, dest_toolkit):
     out = dest_toolkit / plugin
     out.mkdir(parents=True, exist_ok=True)
@@ -89,14 +152,17 @@ def copy_meta(plugin, dest_toolkit):
 
 
 def main():
-    if len(sys.argv) != 2:
-        die("uso: export-claude-dir.py <destino>")
-    dest = Path(sys.argv[1]).resolve()
+    args = [a for a in sys.argv[1:] if a != "--sin-hook"]
+    with_hook = "--sin-hook" not in sys.argv[1:]
+    if len(args) != 1 or args[0].startswith("--"):
+        die("uso: export-claude-dir.py <destino> [--sin-hook]")
+    dest = Path(args[0]).resolve()
+    wanted = ("skills", "agents", "hooks", "toolkit") if with_hook else ("skills", "agents", "toolkit")
     for sub in ("skills", "agents", "hooks", "toolkit"):
-        if (dest / sub).exists():
+        if sub in wanted and (dest / sub).exists():
             die(f"{dest / sub} ya existe; quítalo antes de exportar")
     skills, agents, hooks, toolkit = (dest / s for s in ("skills", "agents", "hooks", "toolkit"))
-    for d in (skills, agents, hooks, toolkit):
+    for d in (dest / s for s in wanted):
         d.mkdir(parents=True)
 
     # superpowers, design-motion, impeccable: skills tal cual.
@@ -108,7 +174,8 @@ def main():
 
     # superpowers: su hook de arranque. Lee ../skills/using-superpowers/SKILL.md
     # desde donde está, así que vale sin cambios en <destino>/hooks/.
-    shutil.copy2(PLUGINS / "superpowers" / "hooks" / "session-start", hooks / "session-start")
+    if with_hook:
+        shutil.copy2(PLUGINS / "superpowers" / "hooks" / "session-start", hooks / "session-start")
 
     # design-motion: las dos chuletas no son skills.
     for name in ("ui-cheatsheet.md", "performance-cheatsheet.md"):
@@ -154,9 +221,10 @@ def main():
             if src.name == "cold-start-interview":
                 rewrite(out / "SKILL.md", "`${CLAUDE_PLUGIN_ROOT}/CLAUDE.md`", f"`{template}` (desde la raíz del repositorio)", count=1)
 
-    n_skills = sum(1 for p in skills.iterdir() if (p / "SKILL.md").is_file())
+    n_visible, n_hidden = apply_visibility(skills, toolkit)
     n_agents = sum(1 for _ in agents.glob("*.md"))
-    print(f"exportado en {dest}: {n_skills} skills, {n_agents} agentes, 1 hook")
+    print(f"exportado en {dest}: {n_visible + n_hidden} skills ({n_visible} visibles, {n_hidden} ocultas), "
+          f"{n_agents} agentes, {1 if with_hook else 0} hook")
 
 
 if __name__ == "__main__":
